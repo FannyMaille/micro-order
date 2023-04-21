@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { OrderToCreateDto, UpdateOrderDto } from './dtos';
+import { OrderDetailsDto, OrderToCreateDto, UpdateOrderDto } from './dtos';
 import { API_URL } from 'src/main';
 import { HttpService } from '@nestjs/axios';
-import { map } from 'rxjs';
+import { catchError, map, Observable, throwError } from 'rxjs';
 
 @Injectable()
 export class OrdersService {
@@ -20,7 +20,21 @@ export class OrdersService {
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} order`;
+    this.httpService.get(`${API_URL}/order/${id}`)
+    .pipe(
+      map((response) => {
+        const orderDetails = response.data as OrderDetailsDto;
+        return orderDetails;
+      }),
+      catchError((err) => {
+        if (err.status === 404) {
+          return throwError({ error: "La commande n'existe pas" });
+        } else {
+          return throwError(err);
+        }
+      })
+    )
+    .subscribe();
   }
 
   update(id: number, updateOrderDto: UpdateOrderDto) {
